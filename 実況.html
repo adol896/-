@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cut-In Only Mode (Chroma-Key)</title>
+    <style>
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: #00FF00; overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        /* 木目調看板カットイン */
+        #phrase-cutin-box {
+            position: absolute; top: 45%; left: 50%; 
+            width: 600px; height: 110px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 50; pointer-events: none; 
+            background: repeating-linear-gradient(90deg, #3d2314, #3d2314 4px, #2b180d 4px, #2b180d 8px),
+                        linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.4) 100%);
+            background-blend-mode: multiply;
+            border: 5px solid #1a0f08; border-radius: 4px;
+            box-shadow: 0 0 30px #ff6600, 0 0 60px #8000ff, inset 0 0 20px rgba(0, 0, 0, 0.8);
+            transform: translate(100vw, -50%) skewX(-10deg); opacity: 0; transition: none;
+        }
+        #phrase-cutin-box.slide-in {
+            opacity: 1; transform: translate(-50%, -50%) skewX(-10deg);
+            transition: transform 0.25s cubic-bezier(0.075, 0.82, 0.165, 1), opacity 0.15s ease-out;
+        }
+        #phrase-cutin-box.slide-out {
+            opacity: 0; transform: translate(-150vw, -50%) skewX(-10deg);
+            transition: transform 0.2s ease-in, opacity 0.15s ease-in;
+        }
+        #phrase-text-content { 
+            font-size: 58px; font-weight: 900; font-family: 'Impact', 'Arial Black', sans-serif;
+            letter-spacing: 10px; color: #ff9900; text-shadow: 0 0 8px #000, 0 0 20px #8000ff, 2px 2px 2px #3a0000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- カットイン用コンテナのみ配置 -->
+    <div id="phrase-cutin-box">
+        <div id="phrase-text-content">DETECTED</div>
+    </div>
+
+    <script>
+        let isRecognitionActive = false; 
+        const sePlayer = new Audio("剣を抜く.mp3");
+        sePlayer.volume = 0.5; 
+
+        let voiceRecognition = null;
+
+        // カットインエフェクト実行
+        function executePhraseCutIn(targetWord) {
+            const box = document.getElementById('phrase-cutin-box');
+            document.getElementById('phrase-text-content').innerText = targetWord;
+
+            box.className = ""; 
+            setTimeout(() => { box.classList.add('slide-in'); }, 50);
+
+            // SE再生
+            setTimeout(() => {
+                try {
+                    sePlayer.currentTime = 0; 
+                    sePlayer.play();          
+                } catch (audioErr) { 
+                    console.error(`オーディオ再生失敗: ${audioErr.message}`); 
+                }
+            }, 300);
+
+            // 退場アニメーション
+            setTimeout(() => {
+                box.classList.remove('slide-in'); 
+                box.classList.add('slide-out');
+            }, 2200);
+        }
+
+        // 音声認識のセットアップ
+        const WebKitSpeech = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (WebKitSpeech) {
+            voiceRecognition = new WebKitSpeech();
+            voiceRecognition.lang = 'ja-JP';
+            voiceRecognition.continuous = true;      
+            voiceRecognition.interimResults = false; 
+
+            voiceRecognition.onstart = () => {
+                isRecognitionActive = true;
+            };
+
+            voiceRecognition.onend = () => {
+                isRecognitionActive = false;
+                safeStartRecognition(); // 自動再起動
+            };
+
+            voiceRecognition.onerror = (event) => {
+                if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+                    isRecognitionActive = false;
+                }
+            };
+
+            voiceRecognition.onresult = (event) => {
+                const currentIndex = event.resultIndex;
+                const heardPhrase = event.results[currentIndex][0].transcript.trim();
+                
+                // 特定ワードの検知（「ここだ」「ここで決める」「これで決める」に対応）
+                if (heardPhrase.includes("ここだ")) {
+                    executePhraseCutIn("ここだ！");
+                } 
+                else if (heardPhrase.includes("ここで決める") || heardPhrase.includes("これで決める")) {
+                    executePhraseCutIn("これで決める！");
+                }
+            };
+
+            // 安全に音声認識を開始する関数
+            function safeStartRecognition() {
+                if (!isRecognitionActive) {
+                    try { 
+                        voiceRecognition.start(); 
+                    } catch (e) {
+                        // 既に開始されている場合の重複エラーは無視
+                    }
+                }
+            }
+
+            // マイクの死活監視（1秒ごとに停止していないかチェック）
+            setInterval(() => {
+                if (!isRecognitionActive) { safeStartRecognition(); }
+            }, 1000);
+
+            // ブラウザの仕様対策：画面クリックで音声認識のファースト起動
+            document.body.addEventListener('click', () => {
+                safeStartRecognition();
+            });
+        } else {
+            alert("お使いのブラウザは音声認識 API に対応していません。Google Chrome等を使用してください。");
+        }
+    </script>
+</body>
+</html>
+

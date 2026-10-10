@@ -369,6 +369,10 @@
                 else if (heardPhrase.includes("ここで決める") || heardPhrase.includes("これで決める")) {
                     executePhraseCutIn("これで決める！");
                 }
+                // 追加: 「いくぞ」「行くぞ」に反応
+                else if (heardPhrase.includes("いくぞ") || heardPhrase.includes("行くぞ")) {
+                    executePhraseCutIn("行くぞ！");
+                }
             };
 
             function safeStartRecognition() {

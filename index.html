@@ -369,9 +369,21 @@
                 else if (heardPhrase.includes("ここで決める") || heardPhrase.includes("これで決める")) {
                     executePhraseCutIn("これで決める！");
                 }
-                // 追加: 「いくぞ」「行くぞ」に反応
                 else if (heardPhrase.includes("いくぞ") || heardPhrase.includes("行くぞ")) {
                     executePhraseCutIn("行くぞ！");
+                }
+                // --- 追加されたカットインワード ---
+                else if (heardPhrase.includes("守護奮迅") || heardPhrase.includes("しゅごふんじん")) {
+                    executePhraseCutIn("守護奮迅！");
+                }
+                else if (heardPhrase.includes("刹那の煌めき") || heardPhrase.includes("せつなのきらめき") || heardPhrase.includes("刹那のきらめき")) {
+                    executePhraseCutIn("刹那の煌めきを！");
+                }
+                else if (heardPhrase.includes("絶対に勝つ") || heardPhrase.includes("ぜったいにかーっ")) {
+                    executePhraseCutIn("絶対に勝つ！");
+                }
+                else if (heardPhrase.includes("やってやる") || heardPhrase.includes("やってみせる")) {
+                    executePhraseCutIn("やってみせる！");
                 }
             };
 
